@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="author" content="Sumit Saha" />
+    <meta name="owner" content="learnwithsumit.com" />
+    <title>Inbox - amarChat</title>
+    <link rel="shortcut icon" href="./images/favicon.png" />
+    <link rel="stylesheet" href="./stylesheets/toastify.css" />
+    <link rel="stylesheet" href="./stylesheets/style.css" />
+    <script src="./js/toastify.js"></script>
+  </head>
+  <body>
+    <div class="menu">
+      <div class="menu-item"><a href="/inbox">Inbox</a></div>
+      <% if(isValidUser.role == 'admin') {%>
+      <div class="menu-item"><a href="/users">Users</a></div>
+      <% } else { %>
+      <p></p>
+      <% } %>
+      <div class="menu-item"><a href="/" onclick="logOut()">Logout</a></div>
+    </div>
+
+    <div id="chat-container">
+      <div id="chat-message-list">
+       
+      </div>
+      <form id="my-form" method="post" action="/inbox">
+        <div id="chat-form">
+          <button
+            class="sendMsg"
+            type="submit"
+            style="background: transparent; border: none; outline: none"
+          >
+            <img src="./images/attachment.png" />
+          </button>
+          <input
+            class="inputMsg"
+            type="text"
+            name="msg"
+            placeholder="Type a message"
+          />
+        </div>
+      </form>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+       console.log("Hii");
+      const socket = io();
+
+      const chatBox = document.getElementById("message-content");
+      const myText = document.querySelector(".you-message");
+      const otherText = document.querySelector(".other-message");
+      const inputMsg = document.querySelector(".inputMsg");
+      const loadMsg = document.getElementById("chat-message-list")
+      
+      async function okBhai() {
+
+        let response = await fetch("/message", { 
+          method: "POST", 
+        });
+
+        let result = await response.json();
+        console.log(result.sent);
+        const gotUser = "<%= isValidUser._id %>"
+
+        const allMsg = result.sent;
+        allMsg.forEach((msg) =>{
+          if(msg.usermsg != undefined){
+          if (gotUser == msg.userid) {
+            console.log("OK");
+            loadMsg.innerHTML += `
+            <div class="message-row you-message">
+            <div class="message-content">
+            <div class="message-text">${msg.usermsg}</div>
+            <div name class="message-time"><%= isValidUser.name %></div>
+          </div>
+        </div>`;
+        } else {
+          console.log("Not Ok");
+          loadMsg.innerHTML += `
+          <div class="message-row other-message">
+          <div class="message-content">
+            <img src="uploads/avatar/<%= isValidUser.avatar%>" alt="${gotUser.name}" />
+            <p style="color: white; letter-spacing: 0.5px; font-size: 10px">
+              <%= isValidUser.name%>
+            </p>
+            <div class="message-text">${msg.usermsg}</div>
+            <div class="message-time">${msg.msgdate}</div>
+          </div>
+        </div>
+          `;
+        }
+                    
+      } else {
+        console.log("Empty Msg");
+      }
+        });
+
+      }
+okBhai()
+      function logOut() {
+        fetch("/", {
+          method: "DELETE",
+        });
+        setTimeout(() => {
+          location.href = "/";
+        }, 1200);
+      }
+    </script>
+
+  </body>
+</html>

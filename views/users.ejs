@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="author" content="Sumit Saha" />
+    <meta name="owner" content="learnwithsumit.com" />
+    <title><%= title %> - amarChat</title>
+    <link rel="shortcut icon" href="./images/favicon.png" />
+    <link rel="stylesheet" href="./stylesheets/toastify.css" />
+    <link rel="stylesheet" href="./stylesheets/style.css" />
+    <script src="./js/toastify.js"></script>
+  </head>
+  <body>
+    <div class="menu">
+      <div class="menu-item"><a href="/inbox">Inbox</a></div>
+      <div class="menu-item"><a href="/users">Users</a></div>
+      <div class="menu-item"><a href="/" onclick="logOut()">Logout</a></div>
+    </div>
+
+    <div class="manageUser-container">
+      <div id="title">
+        <h2>Manage Users</h2>
+      </div>
+
+      <div class="new-message-container new-user">
+        <a href="#" onclick="openModal()">+</a>
+      </div>
+
+      <div id="users-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Manage</th>
+            </tr>
+          </thead>
+          <tbody id="users-table">
+
+            <% users.forEach((user)=> {%>
+            <tr id="<%= user.role %>">
+              <td class="name">
+                <% if(user.avatar) { %>
+                  <img src="./uploads/avatar/<%= user.avatar %>" />
+               <% } else { %>
+                  <img src="./images/user1.png" />
+                <% } %>
+                <span><%= user.name %></span>
+              </td>
+              <td><%= user.email %></td>
+              <td class="manage">
+                <img src="./images/trash.png" alt="Delete" onclick="deleteUser(`<%= user._id %>`)"/>
+              </td>
+            </tr>
+            <% }) %>
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-wrapper" id="add-user-modal">
+      <div class="modal">
+        <a href="#" onclick="closeModal()" class="modal-close">+</a>
+        <div class="modal-title">
+          <h2>Create New User</h2>
+        </div>
+        <div class="modal-body">
+          <form id="add-user-form" method="post" action="/users" enctype="multipart/form-data">
+            <input type="text" placeholder="enter name" name="name" />
+            <p class="error name-error"></p>
+            <input type="text" placeholder="enter email" name="email" />
+            <p class="error email-error"></p>
+
+            <input type="text" placeholder="enter mobile" name="mobile" />
+            <p class="error mobile-error"></p>
+
+            <input
+              type="password"
+              placeholder="enter password"
+              name="password"
+            />
+            <p class="error password-error"></p>
+
+            <input type="file" name="avatar" />
+            <p class="error avatar-error"></p>
+
+            <p class="error common-error"></p>
+
+            <input type="submit" value="Submit" />
+          </form>
+        </div>
+      </div>
+    </div>
+    <script>
+
+      const modal = document.querySelector("#add-user-modal");
+
+      function closeModal() {
+        modal.style.display = "none";
+      }
+      function openModal() {
+        modal.style.display = "block";
+      }
+
+      const successToast = Toastify({ 
+        text: "Your user was added successfully!",
+        duration: 3000
+      });
+
+      const form = document.getElementById("add-user-form");
+
+      form.onsubmit = async function(e){
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        
+        let response = await fetch("/users", {
+          method: "POST",
+          body: formData,
+        });
+
+        let result = await response.json();
+
+        console.log(result.error);
+
+        if(result.error){
+          const allPops = document.querySelectorAll(".error");
+          allPops.forEach((x)=>{
+            x.style.display = "none";
+          });
+          
+          console.log("ERROR IS FOUNDED!");
+          Object.keys(result.error).forEach((field)=>{
+          const errorPop = document.querySelector(`.${field}-error`);
+          errorPop.innerText = result.error[field].msg;
+          errorPop.style.display = 'block';
+          
+          });
+        }
+        else{
+          console.log("NO ERROR FOUND");
+          successToast.showToast();
+          closeModal();
+          document.querySelector("p.error").style.display = "none";
+
+          setTimeout(() => {
+            location.reload();
+          }, 4000);
+        }
+
+      };
+      
+    </script>
+
+    <script>
+      const successDelete = Toastify({ 
+        text: "Your user was successfully deleted!",
+        duration: 3000
+      });
+      const failDelete = Toastify({ 
+        text: "An error occured! Failed to delete the user!",
+        duration: 3000
+      });
+
+      async function deleteUser(userId){
+
+        let response = await fetch(`/users/${userId}`, { method: "DELETE"});
+        let deleteUser = await response.json();
+        
+        if(response.error){
+          failDelete.showToast();
+        } else {
+          successDelete.showToast();
+        }
+      
+        setTimeout(() => {
+          location.reload();
+        }, 2000);
+      }
+
+      function logOut(){
+        fetch("/", {
+          method: "DELETE",
+        });
+      }
+    </script>
+  </body>
+</html>
